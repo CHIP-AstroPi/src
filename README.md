@@ -1,7 +1,5 @@
 # :unicorn: Fil branch
 
+- [x] ### Cloud recon with openCV
 
-
-### -Cloud recon with openCV
-
-### -Light condition recon
+- [ ] ### Light condition recon
