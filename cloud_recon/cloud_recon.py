@@ -1,17 +1,17 @@
-import sys,cv2
+import cv2
 import numpy as np
 
-img = cv2.imread('/home/rdfilippo/Desktop/Scuola/AstroPi/src/cloud_recon/images/train14.jpg', 1)
-hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
-white = np.array([255,255,255])
-lowerBound = np.array([30,30,30])
+def recon(image):
+    img = cv2.imread(image, 1)
+    hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
-mask = cv2.inRange(hsv, lowerBound, white)
+    white = np.array([255,255,255])
+    lowerBound = np.array([30,30,30])
 
-res = cv2.bitwise_and(img, img, mask=mask)
-cv2.imwrite("/home/rdfilippo/Desktop/Scuola/AstroPi/src/cloud_recon/images/train14-1.jpg", res)
+    mask = cv2.inRange(hsv, lowerBound, white)
 
-cv2.imshow("mywindow", res)
+    res = cv2.bitwise_and(img, img, mask=mask)
+    cv2.imwrite(image, res)
 
-cv2.waitKey(0)
+    cv2.waitKey(0)
