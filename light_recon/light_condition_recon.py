@@ -1,9 +1,9 @@
-#import cv2 as cv
-#import numpy as np 
+import cv2
+import numpy as np 
 
 def day_or_night(path,percentage):
     MIN_SAVE = 85
-    img = cv.imread(path)
+    img = cv2.imread(path)
     #--------
 
     bgr_list = []
@@ -36,7 +36,7 @@ def day_or_night(path,percentage):
     #average_value = BGR_to_GRAY(average_value)
     average_value = np.uint8([[[average_value[0],average_value[1],average_value[2]]]])
 
-    gray_avg_Values = cv.cvtColor(average_value,cv.COLOR_BGR2GRAY)
+    gray_avg_Values = cv2.cvtColor(average_value,cv2.COLOR_BGR2GRAY)
     gray_avg_Values = np.squeeze(gray_avg_Values)               #qui ho il valore di grigio 
 
     if gray_avg_Values >= MIN_SAVE:
