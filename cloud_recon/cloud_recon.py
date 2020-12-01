@@ -3,7 +3,7 @@ import numpy as np
 
 
 def recon(image):
-    img = cv2.imread(image, 1)
+        img = cv2.imread(image, 1)
     hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
     white = np.array([255,255,255])
