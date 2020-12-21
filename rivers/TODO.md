@@ -1,0 +1,4 @@
+- [x] adaptive threshold
+- [x] detect contours
+- [ ] detect near chunks as one
+- [ ] transform rivers into numbers 
