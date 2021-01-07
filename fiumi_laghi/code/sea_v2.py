@@ -1,5 +1,5 @@
 """ 
-autori : fabrizio agbonson, luca bruno
+autori : smilefabri, scylla 
 versione : 1.0.1
 
 """
