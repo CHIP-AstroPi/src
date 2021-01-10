@@ -11,7 +11,7 @@ trackbar_type = 'Type: \n 0: Binary \n 1: Binary Inverted \n 2: Truncate \n 3: T
 trackbar_value = 'Value'
 window_name = 'Threshold Demo'
 dst = None
-Image_name = "image4.jpg"
+Image_name = "image3.jpg"
 
 cartella_Image: Path = Path(PATH_IMAGE)
 cartella_elab : Path = Path(PATH_ELAB)
@@ -27,13 +27,8 @@ def whitePrecentage(path):
     img = cv.imread(path)
 
     height, width = img.shape[:2]
-    white = 0
-    for y in range(height):
-        for x in range(width):
-            if img[y][x][0] != 0 and img[y][x][1] != 0 and img[y][x][2] != 0 :
-                white += 1
-    
-    return((white*100)/(width*height))
+
+    return ((np.count_nonzero(img)/3) * 100)/ (height*width)
 
     
 src_gray = cv.cvtColor(Img, cv.COLOR_BGR2GRAY)
