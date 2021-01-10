@@ -4,6 +4,7 @@ import cv2 as cv
 import scipy.misc
 
 def cloud_recon(img):
+    img = cv.imread(img)
     img = img[:, 350:1500]
 
     rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)
