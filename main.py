@@ -57,7 +57,7 @@ class Config():
 # ----------------------------------------
 # CAMERA SETUP
 
-camera = picamera.PICamera()
+camera = picamera.PiCamera()
 camera_raw = picamera.PiRGBArray(camera, size=Config.cam_resolution)
 
 camera.resolution = Config.cam_resolution
