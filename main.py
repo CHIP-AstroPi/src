@@ -20,6 +20,8 @@ TODO check english (!)
 # for autopep8 disable rule E402
 # ----------------------------------------
 from pathlib import Path
+import cv2 as cv
+import picamera
 import logzero
 import logging
 import time
@@ -39,12 +41,36 @@ class Config():
     logfile_data = 'data.csv'
     logfile_log = 'runtime.log'
 
+    # camera
+    cam_resolution = (2592, 1944)
+    cam_framerate = 15
+    cam_format = "bgr"
+
     # loggers
     log_format_date = '%Y-%m-%d %H:%M:%S'
     log_data_format = '%(asctime)s, %(message)s'
     log_log_format = '(%(asctime)s.%(msecs)03d)  [%(levelname)s] %(message)s'
     log_stderr_level = logging.DEBUG  # TODO in production, switch to `logging.INFO`
     log_file_level = logging.INFO
+
+
+# ----------------------------------------
+# CAMERA SETUP
+
+camera = picamera.PICamera()
+camera_raw = picamera.PiRGBArray(camera, size=Config.cam_resolution)
+
+camera.resolution = Config.cam_resolution
+camera.framerate = Config.cam_framerate
+
+
+def camera_capture():
+    """camera raw capture utility"""
+    camera.capture(camera_raw, format=Config.cam_format)
+    return camera_raw.array
+
+# /CAMERA SETUP
+# ----------------------------------------
 
 
 # ----------------------------------------
@@ -144,10 +170,29 @@ def runtime_scheduler(task: callable) -> None:
     logger.info(f'RS:end elapsed={round(time.time() - start, 3)}')
 
 
-def main():
-    """Dummy main"""
-    time.sleep(2.9)
-    logger.info('main')
+# ----------------------------------------
+# MAIN
 
+
+imid = 0
+
+
+def main():
+    global imid
+    image = camera_capture()
+    log_data(imid)
+    cv.imwrite(f'{Config.fs_here}/imgs/{imid}.jpg', image)
+    imid += 1
+
+
+# /MAIN
+# ----------------------------------------
+
+
+# ----------------------------------------
+# RUNTIME ENTRY POINT
 
 runtime_scheduler(main)
+
+# /RUNTIME ENTRY POINT
+# ----------------------------------------
