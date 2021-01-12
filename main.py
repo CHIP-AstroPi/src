@@ -146,7 +146,7 @@ def log_data(*args: any) -> None:
 iss = ephem.readtle(Config.iss_name, Config.iss_l1, Config.iss_l2)
 
 
-def iss_data():
+def get_iss_data():
     """Get data about the ISS
 
     - DMS
@@ -251,9 +251,10 @@ def runtime_scheduler(task: callable) -> None:
 def main():
     img_id, image = camera_capture()
     img_path = image_path()
+    iss_data = get_iss_data()
 
     cv.imwrite(img_path, image)
-    log_data(img_id, img_path)
+    log_data(img_id, img_path, *iss_data)
 
     camera_reset()
 
