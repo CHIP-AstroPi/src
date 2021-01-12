@@ -21,7 +21,7 @@ TODO check english (!)
 # ----------------------------------------
 from pathlib import Path
 from picamera import PiCamera
-from picamera.array  import PiRGBArray
+from picamera.array import PiRGBArray
 import cv2 as cv
 import logzero
 import logging
@@ -64,11 +64,26 @@ camera_raw = PiRGBArray(camera, size=Config.cam_resolution)
 camera.resolution = Config.cam_resolution
 camera.framerate = Config.cam_framerate
 
+# image incremetal id
+_image_id = 0
+
 
 def camera_capture():
-    """camera raw capture utility"""
+    """Camera raw capture utility"""
+    _image_id += 1
     camera.capture(camera_raw, format=Config.cam_format)
-    return camera_raw.array
+    return _image_id, camera_raw.array
+
+
+def camera_reset():
+    """Camera reset utility"""
+    camera_raw.truncate()
+
+
+def image_path():
+    """image path builder"""
+    return f'{Config.fs_here}/img_{_image_id}.jpg'
+
 
 # /CAMERA SETUP
 # ----------------------------------------
@@ -175,18 +190,14 @@ def runtime_scheduler(task: callable) -> None:
 # MAIN
 
 
-imid = 0
-
-
 def main():
-    global imid
-    image = camera_capture()
-    imgpath = f'{Config.fs_here}/img_{imid}.jpg'
-    cv.imwrite(imgpath, image)
-    log_data(imid, imgpath)
-    logger.info('Saved image')
-    imid += 1
-    camera_raw.truncate(0)
+    img_id, image = camera_capture()
+    img_path = image_path()
+
+    cv.imwrite(img_path, image)
+    log_data(img_id, img_path)
+
+    camera_reset()
 
 
 # /MAIN
