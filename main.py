@@ -25,7 +25,9 @@ from picamera.array import PiRGBArray
 import cv2 as cv
 import logzero
 import logging
+import ephem
 import time
+import math
 # ----------------------------------------
 
 
@@ -53,6 +55,11 @@ class Config():
     log_log_format = '(%(asctime)s.%(msecs)03d)  [%(levelname)s] %(message)s'
     log_stderr_level = logging.DEBUG  # TODO in production, switch to `logging.INFO`
     log_file_level = logging.INFO
+
+    # iss position
+    iss_name = 'ISS (ZARYA)'
+    iss_l1 = '1 25544U 98067A   20016.35580316  .00000752  00000-0  21465-4 0  9996'
+    iss_l2 = '2 25544  51.6452  24.6741 0004961 136.6310 355.9024 15.49566400208322'
 
 
 # ----------------------------------------
@@ -130,6 +137,56 @@ def log_data(*args: any) -> None:
     _data_logger.info(', '.join(map(str, args)))
 
 # /LOGGER SETUP
+# ----------------------------------------
+
+
+# ----------------------------------------
+# ISS SETUP
+
+iss = ephem.readtle(Config.iss_name, Config.iss_l1, Config.iss_l2)
+
+
+def iss_data():
+    """Get data about the ISS
+
+    - DMS
+    - latitude [8th decimal]
+    - longitude [8th decimal]
+    - elevation
+    - eclipsed
+    """
+
+    # compute the last position
+    iss.compute()
+
+    # round the latitude at eighth decimal
+    lat_decimal = round(math.degrees(iss.sublat), 8)
+
+    # split the latitude in degrees, minutes and seconds
+    lat = str(iss.sublat)
+    lat_d, lat_m, lat_s = map(float, lat.split(':'))
+
+    # evaluate the correct equator
+    equator = 'N' if lat_d > 0 else 'S'
+    lat_d = abs(lat_d)
+
+    # round the longitude at eighth decimal
+    long_decimal = round(math.degrees(iss.sublong), 8)
+
+    # split the longitude in degrees, minutes and seconds
+    long = str(iss.sublong)
+    long_d, long_m, long_s = map(float, long.split(':'))
+
+    # evaluate the correct quadrant
+    quadrant = 'E' if long_d > 0 else 'W'
+    long_d = abs(long_d)
+
+    # format DMS
+    dms = f"{lat_d}° {lat_m}' {lat_s}'' {equator} {long_d}° {long_m}' {long_s}'' {quadrant}"
+
+    return dms, lat_decimal, long_decimal, iss.elevation, iss.eclipsed
+
+# /ISS SETUP
 # ----------------------------------------
 
 
