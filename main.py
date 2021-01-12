@@ -20,8 +20,9 @@ TODO check english (!)
 # for autopep8 disable rule E402
 # ----------------------------------------
 from pathlib import Path
+from picamera import PiCamera
+from picamera.array  import PiRGBArray
 import cv2 as cv
-import picamera
 import logzero
 import logging
 import time
@@ -57,8 +58,8 @@ class Config():
 # ----------------------------------------
 # CAMERA SETUP
 
-camera = picamera.PiCamera()
-camera_raw = picamera.array.PiRGBArray(camera, size=Config.cam_resolution)
+camera = PiCamera()
+camera_raw = PiRGBArray(camera, size=Config.cam_resolution)
 
 camera.resolution = Config.cam_resolution
 camera.framerate = Config.cam_framerate
@@ -180,9 +181,12 @@ imid = 0
 def main():
     global imid
     image = camera_capture()
-    log_data(imid)
-    cv.imwrite(f'{Config.fs_here}/imgs/{imid}.jpg', image)
+    imgpath = f'{Config.fs_here}/img_{imid}.jpg'
+    cv.imwrite(imgpath, image)
+    log_data(imid, imgpath)
+    logger.info('Saved image')
     imid += 1
+    camera_raw.truncate(0)
 
 
 # /MAIN
