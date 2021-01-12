@@ -70,6 +70,7 @@ _image_id = 0
 
 def camera_capture():
     """Camera raw capture utility"""
+    global _image_id
     _image_id += 1
     camera.capture(camera_raw, format=Config.cam_format)
     return _image_id, camera_raw.array
@@ -77,7 +78,7 @@ def camera_capture():
 
 def camera_reset():
     """Camera reset utility"""
-    camera_raw.truncate()
+    camera_raw.truncate(0)
 
 
 def image_path():
