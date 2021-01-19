@@ -2,8 +2,6 @@ import cv2 as cv
 import numpy as np 
 
 def is_day(img, size_percentage=30, min_threshold=70):
-
-
     # Get image size
     height, width, _ = img.shape
 
