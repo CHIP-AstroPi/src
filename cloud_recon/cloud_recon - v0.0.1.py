@@ -1,42 +1,54 @@
 import cv2 as cv
 import numpy as np
 
-img = cv.imread('./images/train10.jpg')
-#img = img[:, 350:1500]
 
-plt.imshow(imRGB)
-plt.title('original')
-plt.show()
+def cloud_recon(img):
+    img = cv.imread(img)
+    img = img[:, 350:1500]
 
-#img = cv.GaussianBlur(img, (5,5), 0)
+    '''
+    plt.imshow(imRGB)
+    plt.title('original')
+    plt.show()
+    '''
 
-hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    #img = cv.GaussianBlur(img, (5,5), 0)
 
-plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2HSV))
-plt.title('image')
-plt.show()
+    hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
-white = np.array([255,255,255])
-lowerBound = np.array([30,10,30])
+    '''
+    plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2HSV))
+    plt.title('image')
+    plt.show()
+    '''
 
-mask = cv.inRange(hsv, lowerBound, white)
+    white = np.array([255,255,255])
+    lowerBound = np.array([30,10,30])
 
-res = cv.bitwise_and(img, img, mask=mask)
+    mask = cv.inRange(hsv, lowerBound, white)
 
-plt.imshow(cv.bitwise_and(img, img, mask=mask))
-plt.title('elaborated')
-plt.show()
+    res = cv.bitwise_and(img, img, mask=mask)
 
-#count of total pixel
-total = res.shape[0] * res.shape[1]
-print(f"total pixel: {total}")
+    '''
+    plt.imshow(cv.bitwise_and(img, img, mask=mask))
+    plt.title('elaborated')
+    plt.show()
+    '''
 
-#count of black pixel
-sought = [0,0,0]
-black  = np.count_nonzero(np.all(res==sought,axis=2))
-print(f"black pixel: {black}")
+    #count of total pixel
+    total = res.shape[0] * res.shape[1]
+    print(f"total pixel: {total}")
 
-#perc of black pixels
-perc = (black*100)/total
-perc = "%.3f" % perc
-print(f"perc: {perc}%")
+    #count of black pixel
+    sought = [0,0,0]
+    black  = np.count_nonzero(np.all(res==sought,axis=2))
+    print(f"black pixel: {black}")
+
+    #perc of black pixels
+    perc = (black*100)/total
+    perc = "%.3f" % perc
+    print(f"perc: {perc}%")
+
+
+if __name__ == "__main__":
+    cloud_recon('./images/train10.jpg')
