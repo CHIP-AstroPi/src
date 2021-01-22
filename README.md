@@ -2,4 +2,7 @@
 
 - [x] Cloud recon with openCV
 
-- [ ] Light condition recon
+- [x] Light condition recon 
+
+- [x] Adaptive image cutting
+
