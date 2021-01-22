@@ -3,9 +3,21 @@ import numpy as np
 import cv2 as cv
 import scipy.misc
 
+
+def cut_image(img):
+        w,h,_ = img.shape
+        P = [int(w/2),int(h/2)]
+        perc_h = 65
+        perc_w = 65
+        padding_top = int((P[1] * perc_h) / 100)
+        padding_side = int((P[0] * perc_w) / 100 ) 
+
+        return img[P[0] - padding_side:P[0]+ padding_side,P[1]- padding_top:P[1]+padding_top]
+
 def cloud_recon(img):
     img = cv.imread(img)    #read and cut img
-    img = img[:, 350:1500]
+    
+    img = cut_image(img)
 
     rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)    #convert rgb
     hsv = cv.cvtColor(rgb, cv.COLOR_RGB2HSV)    #convert hsv
@@ -41,4 +53,6 @@ def cloud_recon(img):
 
 
 if __name__ == "__main__":
-    cloud_recon('./images/train9.jpg')
+    for k in range (1,28):
+        cloud_recon(f"./dataset_image/train{k}.jpg")
+        print("\n")
