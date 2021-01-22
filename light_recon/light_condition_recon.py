@@ -1,7 +1,20 @@
 import cv2 as cv
 import numpy as np 
 
+def cut_image(img):
+        w,h,_ = img.shape
+        P = [int(w/2),int(h/2)]
+        perc_h = 65
+        perc_w = 65
+        padding_top = int((P[1] * perc_h) / 100)
+        padding_side = int((P[0] * perc_w) / 100 ) 
+
+        return img[P[0] - padding_side:P[0]+ padding_side,P[1]- padding_top:P[1]+padding_top]
+
 def is_day(img, size_percentage=30, min_threshold=70):
+
+    img = cut_image(img)
+
     # Get image size
     height, width, _ = img.shape
 
@@ -46,8 +59,8 @@ def is_day(img, size_percentage=30, min_threshold=70):
 
 
 if __name__ == "__main__":
-    img = cv.imread('./images/train8.jpg')
-    img = img[:, 350:1500]
 
-    day = is_day(img)
-    print(f"è giorno: {day}")
+    for k in range (1,28):
+        img = cv.imread(f"./dataset_image/train{k}.jpg")
+        day = is_day(img)
+        print(f"è giorno: {day}\n")
