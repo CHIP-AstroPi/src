@@ -11,12 +11,9 @@ GREEN = (0,255,0)
 
 def fractal_dimension(img):     #img must be a black gb image with contours drawn on it in any colors except black
     w,h = img.shape[:2]
-
-    cv.imshow("fractal",img)
-    cv.waitKey()
     print(f"h:{h}, w:{w}")
     
-    with open("fractal_value.txt","w") as f:
+    with open("fractal_value.txt","a") as f:
         while w % 5 > 0:
             w = w-1
         while h % 5 > 0:
@@ -64,24 +61,6 @@ def cut_image(img,top = 65,left = 65):
         return img[P[0] - padding_side:P[0]+ padding_side,P[1]- padding_top:P[1]+padding_top]
 
 
-def whitePrecentage(path):
-        img = cv.imread(path)
-
-        height, width = img.shape[:2]
-
-        return ((np.count_nonzero(img)/3) * 100)/ (height*width)
-
-def color_detection(img):   #MUST BE HSV IMAGE
-    """
-    lower = np.array([90,100,20])
-    upper = np.array([125,255,255])"""
-
-    threshold_type = 1
-    threashold_value = 134
-    max_binary_value = 255
-    _, mask = cv.threshold(img, threashold_value, max_binary_value, threshold_type)
-
-    return mask
 
 def adaptive_threshold(Ray_img, Color_img):
     th = cv.adaptiveThreshold(Ray_img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,901, -5)
@@ -90,24 +69,17 @@ def adaptive_threshold(Ray_img, Color_img):
     lowerbound = 0
     upperbound = 1
 
+    w,h = Color_img.shape[:2]
+    fractal_img = np.zeros((w, h, 1), dtype = "uint8")
     for cont in contours:
         p = cv.arcLength(cont, True)
         a = cv.contourArea(cont)
         d = abs(p/a - 1) if a > 0 else None
         if d and lowerbound <= d <= upperbound:
             cv.drawContours(Color_img, [cont],-1, GREEN, 1)
-            w,h = Color_img.shape[:2]
-
-
-            fractal_img = np.zeros((w, h, 1), dtype = "uint8")
-            cv.imshow("fractal",fractal_img)
-            cv.waitKey()
-            cv.imshow("color",Color_img)
-            cv.waitKey()
             cv.drawContours(fractal_img,[cont],-1, (255,255,255), 1)
-            cv.imshow("fractal",fractal_img)
-            cv.waitKey()
-            fractal_dimension(fractal_img)
+
+    fractal_dimension(fractal_img)
             
     return Color_img
     
