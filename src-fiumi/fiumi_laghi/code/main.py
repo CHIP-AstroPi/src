@@ -1,12 +1,13 @@
 import cv2 as cv
 import numpy as np
-
+from random import randint
 #colori
 
 GREEN = (0,255,0)
-
+RED = (0,0,255)
 
 #inzio funzioni
+
 
 def cut_image(img,top = 65,left = 65):
         perc_h = top
@@ -20,12 +21,11 @@ def cut_image(img,top = 65,left = 65):
         return img[P[0] - padding_side:P[0]+ padding_side,P[1]- padding_top:P[1]+padding_top]
 
 
-def whitePrecentage(path):
-        img = cv.imread(path)
-
-        height, width = img.shape[:2]
-
-        return ((np.count_nonzero(img)/3) * 100)/ (height*width)
+def whitePrecentage(img):
+        #img = cv.imread(path)
+        height, width = img.shape[:]
+        
+        return ((np.sum(img == 255)) * 100)/ (height*width)
 
 def color_detection(img):   #MUST BE HSV IMAGE
     """
@@ -39,21 +39,49 @@ def color_detection(img):   #MUST BE HSV IMAGE
 
     return mask
 
-def adaptive_threshold(Ray_img, Color_img):
-    th = cv.adaptiveThreshold(Ray_img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,901, -5)
+def Is_insland_ghost(img,cont,i):
+    
+    c = cv.boundingRect(cont)
+    x,y,w,h = c
+    n = img[y:y+h, x:x+w]
+    
+    n = cv.cvtColor(n,cv.COLOR_BGR2GRAY)
+    _, n=  cv.threshold(n, 134,255,1)
+
+    
+
+    cv.imwrite(f"C:/Users/fabri/Desktop/scuola/project/src/src-fiumi/fiumi_laghi/code/data_elab/cut/image_{i}_{w}_cut.jpg",n)
+
+
+    print("image"+str(i)+": "+str(whitePrecentage(n)))
+    if whitePrecentage(n) < 65.0:
+        cv.drawContours(cv.cvtColor(n,cv.COLOR_GRAY2BGR), [cont],-1, GREEN, 1)     
+        return True
+    else:
+        return False
+
+def adaptive_threshold(Ray_img, Color_img,i):
+    
+    th = cv.adaptiveThreshold(Ray_img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,1101, -5)
     contours, _ = cv.findContours(th, cv.RETR_TREE, cv.CHAIN_APPROX_NONE) 
-    contours = [c for c in contours if cv.arcLength(c,False) >400 ]
+    contours = [c for c in contours if cv.arcLength(c,False) >500 ]
     lowerbound = 0
     upperbound = 1
-
+    
     for cont in contours:
         p = cv.arcLength(cont, True)
         a = cv.contourArea(cont)
         d = abs(p/a - 1) if a > 0 else None
-        if d and lowerbound <= d <= upperbound:
-            cv.drawContours(Color_img, [cont],-1, GREEN, 1)
-            
-    return Color_img, 
+
+        if d and lowerbound <= d <= upperbound and Is_insland_ghost(Color_img,cont,i):
+            cv.drawContours(Color_img, [cont],-1, (randint(10,255),randint(100,255),randint(100,200)), 2)
+
+    
+    
+
+
+
+    return Color_img
 """    cv.drawContours(img, contours, -1, (0, 255, 0), 3 ) 
         opening = cv.morphologyEx(img,cv.MORPH_OPEN,kernel)
     dilation = cv.dilate(opening,kernel,iterations=1)
@@ -65,26 +93,14 @@ def adaptive_threshold(Ray_img, Color_img):
 
 def main():
     
-    for i in range(1,12):
-        img = cv.imread(f"src-fiumi/fiumi_laghi/code/dataset_image/Image{i}.jpg")
+    for i in range(1,37):
+        img = cv.imread(f"C:/Users/fabri/Desktop/scuola/project/src/src-fiumi/fiumi_laghi/code/dataset_image/Image{i}.jpg")
         Cut_Img_Color = cut_image(img,55,55)
 
-        
         gray_img = cv.cvtColor(Cut_Img_Color, cv.COLOR_BGR2GRAY)
-        #hsv_img = cv.cvtColor(img,cv.COLOR_BGR2HSV)
-        #rgb_img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
-        #OLD METHOD
-        
-        #cv.imwrite(f"src-fiumi/fiumi_laghi/code/data_elab/elab{i}.jpg", color_detection(gray_img))
-
-        #ADAPTIVE THRESHOLD
-
-        cv.imwrite(f"src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img,Cut_Img_Color))
-
-        #cv.imwrite(f"fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", hsv_img)
-
-
+        cv.imwrite(f"C:/Users/fabri/Desktop/scuola/project/src/src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img,Cut_Img_Color,i))
+                     
 
 
 
