@@ -1,16 +1,19 @@
 import cv2 as cv
 import numpy as np
 
+#colori
 
+GREEN = (0,255,0)
 
 
 #inzio funzioni
 
-def cut_image(img):
+def cut_image(img,top = 65,left = 65):
+        perc_h = top
+        perc_w = left
         w,h,_ = img.shape
         P = [int(w/2),int(h/2)]
-        perc_h = 65
-        perc_w = 65
+        
         padding_top = int((P[1] * perc_h) / 100)
         padding_side = int((P[0] * perc_w) / 100 ) 
 
@@ -36,9 +39,9 @@ def color_detection(img):   #MUST BE HSV IMAGE
 
     return mask
 
-def adaptive_threshold(img):
-    th = cv.adaptiveThreshold(img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,601, -15)
-    contours, _ = cv.findContours(th, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE) 
+def adaptive_threshold(Ray_img, Color_img):
+    th = cv.adaptiveThreshold(Ray_img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,901, -5)
+    contours, _ = cv.findContours(th, cv.RETR_TREE, cv.CHAIN_APPROX_NONE) 
     contours = [c for c in contours if cv.arcLength(c,False) >400 ]
     lowerbound = 0
     upperbound = 1
@@ -48,10 +51,9 @@ def adaptive_threshold(img):
         a = cv.contourArea(cont)
         d = abs(p/a - 1) if a > 0 else None
         if d and lowerbound <= d <= upperbound:
-            randc = (255,255,0)
-            cv.drawContours(img, [cont], 0, randc, 1)
+            cv.drawContours(Color_img, [cont],-1, GREEN, 1)
             
-    return img
+    return Color_img, 
 """    cv.drawContours(img, contours, -1, (0, 255, 0), 3 ) 
         opening = cv.morphologyEx(img,cv.MORPH_OPEN,kernel)
     dilation = cv.dilate(opening,kernel,iterations=1)
@@ -65,10 +67,10 @@ def main():
     
     for i in range(1,12):
         img = cv.imread(f"src-fiumi/fiumi_laghi/code/dataset_image/Image{i}.jpg")
-
+        Cut_Img_Color = cut_image(img,55,55)
 
         
-        gray_img = cv.cvtColor(cut_image(img), cv.COLOR_BGR2GRAY)
+        gray_img = cv.cvtColor(Cut_Img_Color, cv.COLOR_BGR2GRAY)
         #hsv_img = cv.cvtColor(img,cv.COLOR_BGR2HSV)
         #rgb_img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
@@ -78,7 +80,7 @@ def main():
 
         #ADAPTIVE THRESHOLD
 
-        cv.imwrite(f"src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img))
+        cv.imwrite(f"src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img,Cut_Img_Color))
 
         #cv.imwrite(f"fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", hsv_img)
 
