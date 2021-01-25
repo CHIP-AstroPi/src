@@ -14,6 +14,10 @@ def cut_image(img):
 
         return img[P[0] - padding_side:P[0]+ padding_side,P[1]- padding_top:P[1]+padding_top]
 
+def fractal_clouds(img):    #must be a black bg img with contours of any color
+    
+    pass
+
 def cloud_recon(img):
     img = cv.imread(img)    #read and cut img
     
