@@ -9,44 +9,47 @@ GREEN = (0,255,0)
 
 #inzio funzioni
 
-def fractal_dimension(img):     #img must be a black gb image with contours drawn on it in any colors except black
-    w,h = img.shape[:2]
-    print(f"h:{h}, w:{w}")
+def fractal_dimension(img,contours):    
+    """Comput fractal dimension of coastlines
+
+    Given an image of a coastline and a list of contours,
+    this function comput the fractal value of the coastline
+    using a boxcounting algorithm.
+
+    """
     
-    with open("fractal_value.txt","a") as f:
-        while w % 5 > 0:
-            w = w-1
-        while h % 5 > 0:
-            h = h-1
-        print(f"h:{h}, w:{w}")
-        rows, cols = int(h/5), int(w/5)
+    w,h = img.shape[:2] #get width and height from the image
+    img = np.zeros((w,h,1), np.uint8)   #create a black background image with same dimensions
 
+    #draw contours on the image
+    cv.drawContours(img, contours, -1, (255, 255, 255), 1)
 
+    while w % 5 > 0:    #adjust dimensions so it get perfect 5x5 pixel squares
+        w = w-1
+    while h % 5 > 0:
+        h = h-1
 
-        start_box_counting = 0
-        for r in range(rows):
-            for c in range(cols):
-                if cv.countNonZero(img[r*5:r*5+5,c*5:c*5+5]) > 0:
-                    start_box_counting = start_box_counting + 1
+    higher_scale = 0
+    for r in range(int(h/5)):
+        for c in range(int(w/5)):
+            if cv.countNonZero(img[r*5:r*5+5,c*5:c*5+5]) > 0:
+                higher_scale = higher_scale + 1
 
-        while w % 2 > 0:
-            w = w-1
-        while h % 2 > 0:
-            h = h-1
-        print(f"h:{h}, w:{w}")
-        rows, cols = int(h/2), int(w/2)
-        end_box_counting = 0
-        for r in range(rows):
-            for c in range(cols):
-                if cv.countNonZero(img[r*2:r*2+2,c*2:c*2+2]) > 0:
-                    end_box_counting = end_box_counting + 1
+    #INCREASE RESOLUTION OF THE GRID
+    while w % 2 > 0:     #adjust dimensions so it get perfect 2x2 pixel squares
+        w = w-1
+    while h % 2 > 0:
+        h = h-1
 
-        print(f"log({end_box_counting}/{start_box_counting},10)/log({math.log(2,10)})\n")
+    lower_scale = 0
 
-        fractal_dim = math.log(end_box_counting/start_box_counting,10) / math.log(2,10)
+    for r in range(int(h/2)):
+        for c in range(int(w/2)):
+            if cv.countNonZero(img[r*2:r*2+2,c*2:c*2+2]) > 0:
+                lower_scale = lower_scale + 1
 
-        f.write(f"log({end_box_counting/start_box_counting,10})/log(2) = {fractal_dim}\n")
-        
+    return math.log(lower_scale/higher_scale,10) / math.log(2,10)   #fractal dimension 
+                
 
 
 def cut_image(img,top = 65,left = 65):
@@ -77,21 +80,20 @@ def adaptive_threshold(Ray_img, Color_img):
         d = abs(p/a - 1) if a > 0 else None
         if d and lowerbound <= d <= upperbound:
             cv.drawContours(Color_img, [cont],-1, GREEN, 1)
-            cv.drawContours(fractal_img,[cont],-1, (255,255,255), 1)
 
-    fractal_dimension(fractal_img)
+    print(fractal_dimension(fractal_img,contours))
             
     return Color_img
     
 def main():
     
     for i in range(1,12):
-        img = cv.imread(f"C:/Users/lucab/Desktop/astropi/src/src-fiumi/fiumi_laghi/code/dataset_image/Image{i}.jpg")
+        img = cv.imread(f"C:/Users/lucab/Desktop/repo/astro_pi/src/src-fiumi/fiumi_laghi/code/dataset_image/Image{i}.jpg")
         Cut_Img_Color = cut_image(img,55,55)
 
         gray_img = cv.cvtColor(Cut_Img_Color, cv.COLOR_BGR2GRAY)
 
-        cv.imwrite(f"C:/Users/lucab/Desktop/astropi/src/src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img,Cut_Img_Color))
+        cv.imwrite(f"C:/Users/lucab/Desktop/repo/astro_pi/src/src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img,Cut_Img_Color))
 
 if __name__ == "__main__":
     main()
