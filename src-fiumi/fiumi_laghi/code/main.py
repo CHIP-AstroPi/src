@@ -48,8 +48,10 @@ def fractal_dimension(img,contours):
             if cv.countNonZero(img[r*2:r*2+2,c*2:c*2+2]) > 0:
                 lower_scale = lower_scale + 1
 
-    return math.log(lower_scale/higher_scale,10) / math.log(2,10)   #fractal dimension 
-                
+    try:
+        fractal_value = math.log(lower_scale/higher_scale,10) / math.log(2,10)   #fractal dimension 
+    except:
+        print("Unable to divide by 0.")
 
 
 def cut_image(img,top = 65,left = 65):
