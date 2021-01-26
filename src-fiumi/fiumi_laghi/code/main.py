@@ -46,6 +46,7 @@ def adaptive_threshold(Ray_img, Color_img):
         a = cv.contourArea(cont)
         d = abs(p/a - 1) if a > 0 else None
         if d and lowerbound <= d <= upperbound and Is_insland_ghost(Color_img,cont):
+            
             cv.drawContours(Color_img, [cont],-1, (randint(10,255),randint(100,255),randint(100,200)), 2)
 
     #per jom: countours returna in un array tutti i contorni di un immagine. per adesso elimina solo dal disegno e non dall'array
