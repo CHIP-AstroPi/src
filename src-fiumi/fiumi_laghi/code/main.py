@@ -54,7 +54,7 @@ def Is_insland_ghost(img,cont,i):
 
 
     print("image"+str(i)+": "+str(whitePrecentage(n)))
-    if whitePrecentage(n) < 65.0:
+    if whitePrecentage(n) < 80.0:
         cv.drawContours(cv.cvtColor(n,cv.COLOR_GRAY2BGR), [cont],-1, GREEN, 1)     
         return True
     else:
@@ -62,7 +62,7 @@ def Is_insland_ghost(img,cont,i):
 
 def adaptive_threshold(Ray_img, Color_img,i):
     
-    th = cv.adaptiveThreshold(Ray_img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,1101, -5)
+    th = cv.adaptiveThreshold(Ray_img,100,cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY,1101, -6)
     contours, _ = cv.findContours(th, cv.RETR_TREE, cv.CHAIN_APPROX_NONE) 
     contours = [c for c in contours if cv.arcLength(c,False) >500 ]
     lowerbound = 0
