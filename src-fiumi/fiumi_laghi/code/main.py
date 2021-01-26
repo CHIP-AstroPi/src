@@ -26,10 +26,9 @@ def Is_insland_ghost(img,cont):
     n = img[y:y+h, x:x+w]
     n = cv.cvtColor(n,cv.COLOR_BGR2GRAY)
     _, n=  cv.threshold(n, 134,255,1)
-    #cv.imwrite(f"C:/Users/fabri/Desktop/scuola/project/src/src-fiumi/fiumi_laghi/code/data_elab/cut/image_{i}_{w}_cut.jpg",n)
-    #print("image"+str(i)+": "+str(whitePrecentage(n)))
+
     if whitePrecentage(n) < 80.0:
-        #cv.drawContours(cv.cvtColor(n,cv.COLOR_GRAY2BGR), [cont],-1, GREEN, 1)     
+            
         return True
     else:
         return False
@@ -41,17 +40,21 @@ def adaptive_threshold(Ray_img, Color_img):
     lowerbound = 0
     upperbound = 1
     
-    for cont in contours:
+    for i,cont in enumerate(contours):
+
         p = cv.arcLength(cont, True)
         a = cv.contourArea(cont)
         d = abs(p/a - 1) if a > 0 else None
-        if d and lowerbound <= d <= upperbound and Is_insland_ghost(Color_img,cont):
-            
-            cv.drawContours(Color_img, [cont],-1, (randint(10,255),randint(100,255),randint(100,200)), 2)
+        if d and lowerbound <= d <= upperbound  :
 
+            cv.drawContours(Color_img, [cont],-1, (randint(10,255),randint(100,255),randint(100,200)), 2)
+            if Is_insland_ghost(Color_img,cont):
+                contours.pop(i)
+        
+        
     #per jom: countours returna in un array tutti i contorni di un immagine. per adesso elimina solo dal disegno e non dall'array
 
-    return Color_img, contours
+    return Color_img
     
 def main():
     
