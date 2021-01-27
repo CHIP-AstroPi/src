@@ -262,7 +262,7 @@ def get_iss_data():
 # FUNCTIONS
 
 def runtime_scheduler(task: callable) -> None:
-    """Handle runtime task scheduling
+    """Handle runtime task scheduling. Can be used as an autorunning decorator.
 
     Given the total runtime `Config.rs_tot` and the minimum step length `Config.rs_step`,
     it will try to fit the `task` in each step.
@@ -449,36 +449,27 @@ def cloud_percent(img: np.ndarray) -> float:
 # MAIN
 
 
+# the main is runned automatically thorugh the `runtime_scheduler` decorator
+@runtime_scheduler
 def main():
-    # img_id, raw_image = camera_capture()
-    # img_path = image_path()
-    # iss_data = get_iss_data()
-
-    # cutted_image = cut_image(raw_image)
-    # if not is_day(cutted_image):
-    #     logger.info('Not daytime, closing')
-
-    # cv.imwrite(img_path, raw_image)
-    # log_data(img_id, img_path, cloud_percent(cutted_image), *iss_data)
-
-    # camera_reset()
-
     with camera as raw_image:
+
+        # get iss data
+        iss_data = get_iss_data()
 
         # remove borders from image
         cutted_image = cut_image(raw_image)
 
-        cv.imwrite(camera.build_image_path(), cutted_image)
+        # check if the image is taken at daytime
+        if not is_day(cutted_image):
+            logger.info('Not daytime, closing')
+            return
+
+        image_path = camera.build_image_path()
+        cv.imwrite(image_path, cutted_image)
+        log_data(camera.image_id, image_path,
+                 cloud_percent(cutted_image), *iss_data)
 
 
 # /MAIN
-# ----------------------------------------
-
-
-# ----------------------------------------
-# RUNTIME ENTRY POINT
-
-runtime_scheduler(main)
-
-# /RUNTIME ENTRY POINT
 # ----------------------------------------
