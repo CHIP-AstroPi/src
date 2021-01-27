@@ -20,8 +20,6 @@ TODO check english (!)
 # for autopep8 disable rule E402
 # ----------------------------------------
 from pathlib import Path
-from picamera import PiCamera
-from picamera.array import PiRGBArray
 import numpy as np
 import cv2 as cv
 import logzero
@@ -29,6 +27,16 @@ import logging
 import ephem
 import time
 import math
+
+# for test purpose, we don't always works directly on the respberry.
+# hence, we try to import the PiCamera module, and if it fails to
+# we simulate a dummy camera that uses images on disk as frames
+try:
+    from picamera import PiCamera
+    from picamera.array import PiRGBArray
+    NOCAM = False
+except ImportError:
+    NOCAM = True
 # ----------------------------------------
 
 
@@ -37,8 +45,8 @@ class Config():
 
     # runtime schedule
     # see the `runtime_schedule` function for more info
-    rs_step = 2 * 60  # [seconds]
-    rs_tot = 15 * 60  # [seconds]
+    rs_step = 1 * 60  # [seconds]
+    rs_tot = 5 * 60  # [seconds]
 
     # fs
     fs_here = Path(__file__).parent.resolve()
@@ -66,33 +74,88 @@ class Config():
 # ----------------------------------------
 # CAMERA SETUP
 
-camera = PiCamera()
-camera_raw = PiRGBArray(camera, size=Config.cam_resolution)
 
-camera.resolution = Config.cam_resolution
-camera.framerate = Config.cam_framerate
+class Camera:
+    """Camera wrapper
 
-# image incremetal id
-_image_id = 0
+    If the PiCamera module is loaded, works as a wrapper. If it's 
+    not loaded read images from the disk and exposes them as frames.
+    """
+
+    def __init__(self, image_first_id=0,  is_picam_loaded=not NOCAM, dummy_images_dir='dummy_images', dummy_images_formats=['.jpg']):
+
+        # image incremental id
+        self.image_id = image_first_id
+
+        # checks if the picamera module is loaded
+        self._is_picam_loaded = is_picam_loaded
+
+        # if the picamera module is loaded, init it's camera
+        if self._is_picam_loaded:
+
+            # picamera creation
+            self._picam = PiCamera()
+            self._picam_raw = PiRGBArray(
+                self._picam, size=Config.cam_resolution)
+
+            # picamera configuration
+            self._picam.resolution = Config.cam_resolution
+            self._picam.framerate = Config.cam_framerate
+
+        # if the picamera module is not loaded, we looks for images
+        # to feed as fake frames
+        else:
+
+            # finds dummy images
+            dummy_dir = Config.fs_here / dummy_images_dir
+            dummy_images = filter(
+                lambda file: file.is_file() and file.suffix in dummy_images_formats,
+                dummy_dir.iterdir()
+            )
+
+            self._dummy_images = list(dummy_images)
+
+            # check if there is no images, and throws if it's the case
+            assert len(self._dummy_images) > 0, Exception('No images found')
+
+    def capture(self) -> np.ndarray:
+        """Capture raw frames from camera or disk"""
+
+        # if the picamera module is loaded
+        if self._is_picam_loaded:
+            self._picam.capture(self._picam_raw, format=Config.cam_format)
+            return self._picam_raw.array
+
+        # otherwise loads image from disk
+        # cicle over images if index (id) exceeds the number of images
+        image_index = self.image_id % len(self._dummy_images)
+        image_path = self._dummy_images[image_index]
+        return cv.imread(str(image_path))
+
+    def build_image_path(self, image_format='.jpg') -> str:
+        """Builds image path based on `Cofig.fs_here`"""
+        return f'{Config.fs_here}/img_{self.image_id}{image_format}'
+
+    def camera_update(self) -> None:
+        """Update camera id and reset picamera raw input, if loaded"""
+
+        # increment the image id
+        self.image_id += 1
+
+        # truncate picamera raw stream
+        if self._is_picam_loaded:
+            self._picam_raw.truncate(0)
+
+    def __enter__(self) -> np.ndarray:
+        """Syntactic sugar for `Camera.capture`"""
+        return self.capture()
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Syntactic sugar for `Camera.camera_update`"""
+        self.camera_update()
 
 
-def camera_capture():
-    """Camera raw capture utility"""
-    global _image_id
-    _image_id += 1
-    camera.capture(camera_raw, format=Config.cam_format)
-    return _image_id, camera_raw.array
-
-
-def camera_reset():
-    """Camera reset utility"""
-    camera_raw.truncate(0)
-
-
-def image_path():
-    """image path builder"""
-    return f'{Config.fs_here}/img_{_image_id}.jpg'
-
+camera = Camera()
 
 # /CAMERA SETUP
 # ----------------------------------------
@@ -381,28 +444,32 @@ def cloud_percent(img: np.ndarray) -> float:
 
 
 def main():
-    img_id, raw_image = camera_capture()
-    img_path = image_path()
-    iss_data = get_iss_data()
+    # img_id, raw_image = camera_capture()
+    # img_path = image_path()
+    # iss_data = get_iss_data()
 
-    cutted_image = cut_image(raw_image)
-    if not is_day(cutted_image):
-        logger.info('Not daytime, closing')
-        
-    cv.imwrite(img_path, raw_image)
-    log_data(img_id, img_path, cloud_percent(cutted_image), *iss_data)
+    # cutted_image = cut_image(raw_image)
+    # if not is_day(cutted_image):
+    #     logger.info('Not daytime, closing')
 
-    camera_reset()
+    # cv.imwrite(img_path, raw_image)
+    # log_data(img_id, img_path, cloud_percent(cutted_image), *iss_data)
 
+    # camera_reset()
+
+    with camera as raw_image:
+        print(camera.build_image_path())
+        cv.imwrite(camera.build_image_path(), raw_image)
 
 # /MAIN
 # ----------------------------------------
 
-
 # ----------------------------------------
 # RUNTIME ENTRY POINT
+# runtime_scheduler(main)
 
-runtime_scheduler(main)
+
+main()
 
 # /RUNTIME ENTRY POINT
 # ----------------------------------------
