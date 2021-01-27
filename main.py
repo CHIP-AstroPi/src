@@ -117,7 +117,7 @@ class Camera:
                 dummy_dir.iterdir()
             )
 
-            self._dummy_images = list(dummy_images)
+            self._dummy_images = sorted(dummy_images)
 
             # check if there is no images, and throws if it's the case
             assert len(self._dummy_images) > 0, Exception('No images found')
@@ -464,8 +464,11 @@ def main():
     # camera_reset()
 
     with camera as raw_image:
-        print(camera.build_image_path())
-        cv.imwrite(camera.build_image_path(), raw_image)
+
+        # remove borders from image
+        cutted_image = cut_image(raw_image)
+
+        cv.imwrite(camera.build_image_path(), cutted_image)
 
 
 # /MAIN
