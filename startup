@@ -1,0 +1,67 @@
+#!/bin/python3
+
+"""
+Raspberry startup script
+
+Check for previous runtime data
+and move them to dedicated folder
+"""
+
+from pathlib import Path
+from datetime import datetime
+import json
+
+
+def size_format(size):
+    for hp in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024.0:
+            return f'{round(size, 2)} {hp}'
+        size /= 1024.0
+    return size
+
+
+here = Path(__file__).parent.resolve()
+runtime_suffixes = [
+    '.jpg',
+    '.csv',
+    '.log',
+]
+
+files = list(filter(
+    lambda file: file.is_file() and file.suffix in runtime_suffixes,
+    here.iterdir()
+))
+
+if len(files) > 0:
+
+    oldest_modification = datetime.fromtimestamp(min(map(
+        lambda file: int(file.stat().st_mtime),
+        files
+    )))
+
+    runtime_folder = oldest_modification.strftime('%d.%m.%Y-%H:%M:%S')
+    runtime_path = here / runtime_folder
+    funtime_files_path = runtime_path / 'runtime'
+
+    funtime_files_path.mkdir(parents=True, exist_ok=True)
+
+    total_size = 0
+
+    for file in files:
+        total_size += file.stat().st_size
+        destination = funtime_files_path / file.name
+        file.replace(destination)
+
+    meta_dir = runtime_path / 'meta.json'
+    with meta_dir.open("w", encoding="utf-8") as meta_f:
+        meta_f.write(json.dumps({
+            'size': {
+                'raw': total_size,
+                'formatted': size_format(total_size)
+            },
+            'date': {
+                'backup': datetime.now().strftime('%d.%m.%Y-%H:%M:%S'),
+                'oldest_modification': oldest_modification.strftime('%d.%m.%Y-%H:%M:%S')
+            },
+            'files': list(map(lambda f: str(f.name), files))
+        }, indent=4))
