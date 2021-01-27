@@ -45,8 +45,8 @@ class Config():
 
     # runtime schedule
     # see the `runtime_schedule` function for more info
-    rs_step = 1 * 60  # [seconds]
-    rs_tot = 5 * 60  # [seconds]
+    rs_step = 0.1 * 60  # [seconds]
+    rs_tot = 0.5 * 60  # [seconds]
 
     # fs
     fs_here = Path(__file__).parent.resolve()
@@ -287,14 +287,13 @@ def runtime_scheduler(task: callable) -> None:
 
         # task starting timestamp
         task_start = time.time()
-        logger.debug(f'RS:task:start @={round(time.time() - start, 4)}')
+        logger.info(f'RS:task:start at={round(time.time() - start, 4)}')
 
         # task execution
         task()
 
         # execution time calculation
         task_exec_time = time.time() - task_start
-        logger.debug(f'RS:task:end Δ={round(task_exec_time, 4)}')
 
         # maximum task execution time update
         if max_task_exec_time < task_exec_time:
@@ -307,7 +306,10 @@ def runtime_scheduler(task: callable) -> None:
         # "merge" steps if they overlap
         while padding_time < 0:
             padding_time += Config.rs_step
-        logger.debug(f'RS:padding={round(padding_time, 4)}')
+
+        # log execution data
+        log_str = f'RS:task:end duration={round(task_exec_time, 4)} padding={round(padding_time, 4)}'
+        logger.info(log_str)
 
         # waiting for the next step
         time.sleep(padding_time)
@@ -465,15 +467,15 @@ def main():
         print(camera.build_image_path())
         cv.imwrite(camera.build_image_path(), raw_image)
 
+
 # /MAIN
 # ----------------------------------------
 
+
 # ----------------------------------------
 # RUNTIME ENTRY POINT
-# runtime_scheduler(main)
 
-
-main()
+runtime_scheduler(main)
 
 # /RUNTIME ENTRY POINT
 # ----------------------------------------
