@@ -58,6 +58,10 @@ class Config():
     cam_framerate = 15
     cam_format = "bgr"
 
+    # dummy camera
+    cam_dummy_folder = 'dummy_images'
+    cam_dummy_formats = ['.jpg']
+
     # loggers
     log_format_date = '%Y-%m-%d %H:%M:%S'
     log_data_format = '%(asctime)s, %(message)s'
@@ -82,7 +86,7 @@ class Camera:
     not loaded read images from the disk and exposes them as frames.
     """
 
-    def __init__(self, image_first_id=0,  is_picam_loaded=not NOCAM, dummy_images_dir='dummy_images', dummy_images_formats=['.jpg']):
+    def __init__(self, image_first_id=0,  is_picam_loaded=not NOCAM, dummy_images_dir=Config.cam_dummy_folder, dummy_images_formats=Config.cam_dummy_formats):
 
         # image incremental id
         self.image_id = image_first_id
