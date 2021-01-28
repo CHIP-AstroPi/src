@@ -12,11 +12,11 @@ def rivers_detection(img):
         255,
         cv.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv.THRESH_BINARY_INV,
-        25,
+        3,
         3
     )
 
-    _, conts, hier = cv.findContours(
+    conts, hier = cv.findContours(
         thr,
         cv.RETR_TREE,
         cv.CHAIN_APPROX_NONE
@@ -83,48 +83,58 @@ def rivers_detection(img):
     # exc = np.zeros(img.shape, np.uint8)
     exc = np.copy(img)
 
+    for cont in reduced_contours:
+        if contour_len(cont) > 10:
+            draw_contour(exc, cont)
+
     # color match
 
-    def drawline(img, point, color=(0, 255, 0)):
-        cv.line(img, point, point, color, thickness=1)
+    # def drawline(img, point, color=(0, 255, 0)):
+    #     cv.line(img, point, point, color, thickness=1)
 
-    longest = max(reduced_contours, key=len)
-    draw_contour(exc, longest)
+    # longest = max(reduced_contours, key=len)
+    # draw_contour(exc, longest)
 
-    center_index = int(len(longest) / 2)
+    # center_index = int(len(longest) / 2)
 
-    a = longest[center_index - 1][0]
-    b = longest[center_index][0]
-    c = longest[center_index + 1][0]
-    print(a, b, c)
+    # a = longest[center_index - 1][0]
+    # b = longest[center_index][0]
+    # c = longest[center_index + 1][0]
+    # print(a, b, c)
 
-    drawline(exc, (a[0], a[1]), color=(0, 255, 50))
-    drawline(exc, (b[0], b[1]), color=(0, 100, 255))
-    drawline(exc, (c[0], c[1]), color=(0, 255, 50))
+    # drawline(exc, (a[0], a[1]), color=(0, 255, 50))
+    # drawline(exc, (b[0], b[1]), color=(0, 100, 255))
+    # drawline(exc, (c[0], c[1]), color=(0, 255, 50))
 
-    y = 0
-    x = 1
+    # y = 0
+    # x = 1
 
-    m = (c[y] - a[y]) / (c[x] - a[x])
-    mb = - 1 / m
+    # m = (c[y] - a[y]) / (c[x] - a[x])
+    # mb = - 1 / m
 
-    t = 12
-    alpha = math.atan(mb)
-    dy = sin(alpha) * t
-    dx = cos(alpha) * t
-    nx = int(b[x] + dx)
-    ny = int(b[y] + dy)
-    drawline(exc, (ny, nx), color=(0, 0, 255))
-    print(dx, dy, hyp(b[x], b[y], nx, ny))
+    # t = 12
+    # alpha = math.atan(mb)
+    # dy = sin(alpha) * t
+    # dx = cos(alpha) * t
+    # nx = int(b[x] + dx)
+    # ny = int(b[y] + dy)
+    # p = img[ny, nx]
+    # color = tuple(map(int, (p[0], p[1], p[2])))
+    # print(color)
+    # drawline(exc, (ny, nx),  color=color)
+    # print(dx, dy, hyp(b[x], b[y], nx, ny))
 
-    t = -t
-    alpha = math.atan(mb)
-    dy = sin(alpha) * t
-    dx = cos(alpha) * t
-    nx = int(b[x] + dx)
-    ny = int(b[y] + dy)
-    drawline(exc, (ny, nx), color=(0, 0, 255))
-    print(nx, ny, hyp(b[x], b[y], nx, ny))
+    # t = -t
+    # alpha = math.atan(mb)
+    # dy = sin(alpha) * t
+    # dx = cos(alpha) * t
+    # nx = int(b[x] + dx)
+    # ny = int(b[y] + dy)
+    # p = img[ny, nx]
+    # color = tuple(map(int, (p[0], p[1], p[2])))
+    # print(color)
+    # drawline(exc, (ny, nx),  color=color)
+    # print(nx, ny, hyp(b[x], b[y], nx, ny))
 
     cv.imwrite('out.jpg', exc)
 
@@ -153,8 +163,8 @@ def cut_image(img: np.ndarray, target_height_perc=65, target_width_perc=65) -> n
     ]
 
 
-# img = cv.imread('./data/46139916742_e461092961_o.jpg')
-img = cv.imread('./data/46139865612_61080b4f33_o.jpg')
+img = cv.imread('./data/46139916742_e461092961_o.jpg')
+# img = cv.imread('./data/46139865612_61080b4f33_o.jpg')
 img = cut_image(img)
 
 
