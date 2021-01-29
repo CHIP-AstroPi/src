@@ -446,6 +446,54 @@ def cloud_percent(img: np.ndarray) -> float:
 
 
 # ----------------------------------------
+# CONTOURS
+
+
+def white_percentage(img):
+    height, width = img.shape[:2]
+    return ((np.sum(img == 255)) * 100) / (height*width)
+
+
+def is_island_ghost(img, cont):
+    x, y, w, h = cv.boundingRect(cont)
+    n = img[y:y+h, x:x+w]
+    n = cv.cvtColor(n, cv.COLOR_BGR2GRAY)
+    _, n = cv.threshold(n, 134, 255, 1)
+    return white_percentage(n) < 60.0
+
+
+def find_contours(img_gray, img_color):
+    th = cv.adaptiveThreshold(
+        img_gray,
+        100,
+        cv.ADAPTIVE_THRESH_MEAN_C,
+        cv.THRESH_BINARY,
+        1101,
+        -6
+    )
+
+    contours, _ = cv.findContours(th, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+    contours = [c for c in contours if cv.arcLength(c, False) > 100]
+
+    lowerbound = 0
+    upperbound = 1
+    to_ignore = []
+
+    for i, cont in enumerate(contours):
+        p = cv.arcLength(cont, True)
+        a = cv.contourArea(cont)
+        d = abs(p/a - 1) if a > 0 else None
+        if not (d and lowerbound <= d <= upperbound and is_island_ghost(img_color, cont)):
+            to_ignore.append(i)
+
+    return contours, to_ignore
+
+
+# /CONTOURS
+# ----------------------------------------
+
+
+# ----------------------------------------
 # MAIN
 
 
@@ -457,13 +505,20 @@ def main():
         # get iss data
         iss_data = get_iss_data()
 
-        # remove borders from image
-        cutted_image = cut_image(raw_image)
+        # image basic modding
+        image = cut_image(raw_image)
+        gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         # check if the image is taken at daytime
-        if not is_day(cutted_image):
+        if not is_day(image):
             logger.info('Not daytime, closing')
             return
+
+        all_contours, to_ignore = find_contours(gray_image, image)
+        contours = [
+            contour for i, contour in enumerate(all_contours)
+            if not i in to_ignore
+        ]
 
         image_path = camera.build_image_path()
         cv.imwrite(image_path, cutted_image)
