@@ -59,7 +59,7 @@ def adaptive_threshold(Ray_img, Color_img):
         
     #per jom: countours returna in un array tutti i contorni di un immagine. per adesso elimina solo dal disegno e non dall'array
 
-    return Color_img ,crop
+    return contours ,crop
     
 def main():
     
@@ -71,11 +71,14 @@ def main():
 
         #per jom, questa è la funzione che restituisce i contorni di una immagine(returna un array di numpy)
         #per farlo funzionare ti servono i metodi:
-        
+
         #whitePrecentage(img)
         #Is_insland_ghost(img,cont)
         #una cosa in più Cut_image()
-        #contorni, index_not_cont = adaptive_threshold(gray_img,Cut_Img_Color)
+        contorni, index_not_cont = adaptive_threshold(gray_img,Cut_Img_Color)
+
+        print(contorni)
+        print(index_not_cont)
         
         #debug
         #cv.imwrite(f"C:/Users/fabri/Desktop/scuola/project/src/src-fiumi/fiumi_laghi/code/data_elab/elab{i}_adaptive.jpg", adaptive_threshold(gray_img,Cut_Img_Color))
