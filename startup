@@ -25,6 +25,7 @@ runtime_suffixes = [
     '.jpg',
     '.csv',
     '.log',
+    '.json'
 ]
 
 files = list(filter(

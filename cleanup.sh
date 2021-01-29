@@ -1,1 +1,1 @@
-rm *.jpg *.csv *.log
+rm *.jpg *.csv *.log *.json

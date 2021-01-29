@@ -27,6 +27,7 @@ import logging
 import ephem
 import time
 import math
+import json
 
 # for test purpose, we don't always works directly on the respberry.
 # hence, we try to import the PiCamera module, and if it fails to
@@ -203,6 +204,18 @@ def log_data(*args: any) -> None:
     """
 
     _data_logger.info(', '.join(map(str, args)))
+
+
+def json_dump(image_id: int, name: str, data: dict) -> None:
+    """Json data logging utility
+
+    Dumps the `data` object to a json file named as <image_id>_<name>.json
+    """
+    filename = Config.fs_here / f'{image_id}_{name}.json'
+    with filename.open('w') as out:
+        dump = json.dumps(data, indent=4)
+        out.write(dump)
+
 
 # /LOGGER SETUP
 # ----------------------------------------
@@ -520,10 +533,17 @@ def main():
             if not i in to_ignore
         ]
 
+        json_dump(
+            camera.image_id,
+            'contours',
+            {'contours': list(map(lambda c: c.tolist(), all_contours)),
+             'ignorable': to_ignore}
+        )
+
         image_path = camera.build_image_path()
-        cv.imwrite(image_path, cutted_image)
+        cv.imwrite(image_path, image)
         log_data(camera.image_id, image_path,
-                 cloud_percent(cutted_image), *iss_data)
+                 cloud_percent(image), *iss_data)
 
 
 # /MAIN
