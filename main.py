@@ -352,7 +352,7 @@ def cut_image(img: np.ndarray, target_height_perc=65, target_width_perc=65) -> n
 def is_day(img: np.ndarray, center_size_perc=30, threshold=70) -> bool:
     """Check if the photo represent a daytime scenary
 
-    If the average brightness of the center of the image is higher than a `threshold`, 
+    If the average brightness of the center of the image is higher than a `threshold`,
     it is assumed to be taken at daytime.
     """
 
@@ -454,20 +454,14 @@ def cloud_percent(img: np.ndarray) -> float:
     return 100 * red_pixels_count / pixels_count
 
 
-# /FUNCTIONS
-# ----------------------------------------
-
-
-# ----------------------------------------
-# CONTOURS
-
-
-def white_percentage(img):
+def white_percentage(img: np.ndarray) -> bool:
+    """Calculate the percentage of white pixels in an image"""
     height, width = img.shape[:2]
     return ((np.sum(img == 255)) * 100) / (height*width)
 
 
-def is_island_ghost(img, cont):
+def is_island_ghost(img: np.ndarray, cont: np.ndarray) -> bool:
+    """Check if a contour represent a ghost island"""
     x, y, w, h = cv.boundingRect(cont)
     n = img[y:y+h, x:x+w]
     n = cv.cvtColor(n, cv.COLOR_BGR2GRAY)
@@ -475,7 +469,9 @@ def is_island_ghost(img, cont):
     return white_percentage(n) < 60.0
 
 
-def find_contours(img_gray, img_color):
+def find_coasts(img_gray, img_color):
+    """Finds coastlines"""
+
     th = cv.adaptiveThreshold(
         img_gray,
         100,
@@ -502,7 +498,7 @@ def find_contours(img_gray, img_color):
     return contours, to_ignore
 
 
-# /CONTOURS
+# /FUNCTIONS
 # ----------------------------------------
 
 
@@ -527,17 +523,14 @@ def main():
             logger.info('Not daytime, closing')
             return
 
-        all_contours, to_ignore = find_contours(gray_image, image)
-        contours = [
-            contour for i, contour in enumerate(all_contours)
-            if not i in to_ignore
-        ]
-
+        coasts, to_ignore = find_coasts(gray_image, image)
         json_dump(
             camera.image_id,
-            'contours',
-            {'contours': list(map(lambda c: c.tolist(), all_contours)),
-             'ignorable': to_ignore}
+            'coasts',
+            {
+                'coasts': list(map(lambda c: c.tolist(), coasts)),
+                'ignorable': to_ignore
+            }
         )
 
         image_path = camera.build_image_path()
