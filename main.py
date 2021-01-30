@@ -20,6 +20,7 @@ TODO check english (!)
 # for autopep8 disable rule E402
 # ----------------------------------------
 from pathlib import Path
+from typing import Tuple
 import numpy as np
 import cv2 as cv
 import logzero
@@ -74,6 +75,11 @@ class Config():
     iss_name = 'ISS (ZARYA)'
     iss_l1 = '1 25544U 98067A   21026.29455175  .00001781  00000-0  40614-4 0  9995'
     iss_l2 = '2 25544  51.6464 324.5349 0002308 292.1434 166.6739 15.48892138266603'
+
+    # cloud detection
+    cloud_lower = [195] * 3
+    cloud_upper = [255] * 3
+    cloud_saturation_scale = 1.5
 
 
 # ----------------------------------------
@@ -401,67 +407,46 @@ def is_day(img: np.ndarray, center_size_perc=30, threshold=70) -> bool:
     return average_grayscale >= threshold
 
 
-def cloud_percent(img: np.ndarray) -> float:
-    """Calculate the percentage of clouds in an image"""
-
-    # convert the image to hsv
-    hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-
-    # extract the saturation of the image
-    saturation = hsv[:, :, 1]
-
-    # apply otsu threshold to the saturation
-    threshold_type = cv.THRESH_BINARY+cv.THRESH_OTSU
-    _, threshold = cv.threshold(saturation, 0, 255, threshold_type)
-
-    # find the contours of the threshold
-    contours = cv.findContours(
-        threshold,
-        cv.RETR_EXTERNAL,
-        cv.CHAIN_APPROX_NONE
-    )[-2]
-
-    # create an `img` clone
-    img_clone = np.copy(img)
-
-    # draw the contours on the img clone
-    cv.drawContours(img_clone, contours, -1, (0, 255, 0), 2)
-
-    # TODO what does it do?
-    x, y, w, h = cv.boundingRect(contours[0])
-    threshold[y:y+h, x:x+w] = 255 - threshold[y:y+h, x:x+w]
-    contours = cv.findContours(
-        threshold,
-        cv.RETR_EXTERNAL,
-        cv.CHAIN_APPROX_NONE
-    )[-2]
-
-    # fill contours
-    for contour in contours:
-        if cv.contourArea(contour) > 4:
-            cv.drawContours(
-                img_clone,
-                [contour],
-                -1,
-                (255, 0, 0),
-                thickness=cv.FILLED
-            )
-
-    # calculate the percentage of clouds
-    pixels_count = img_clone.shape[0] * img_clone.shape[1]
-    red_pixels = np.all(img_clone == [255, 0, 0], axis=2)
-    red_pixels_count = np.count_nonzero(red_pixels)
-    return 100 * red_pixels_count / pixels_count
-
-
-def white_percentage(img: np.ndarray) -> bool:
+def white_percentage(img: np.ndarray) -> float:
     """Calculate the percentage of white pixels in an image"""
+
     height, width = img.shape[:2]
-    return ((np.sum(img == 255)) * 100) / (height*width)
+    white_pixels_count = np.sum(img == 255)
+    return 100 * white_pixels_count / (height * width)
+
+
+def scale_saturation(img: np.ndarray, scale: float) -> np.ndarray:
+    """Scale saturation in an image"""
+
+    # convert the image to float32 hsv
+    hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV).astype('float32')
+
+    # scale the saturation by `scale`
+    (h, s, v) = cv.split(hsv)
+    s = np.clip(s * scale, 0, 255)
+    hsv = cv.merge([h, s, v])
+
+    # convert the image back to uint8 bgr
+    return cv.cvtColor(hsv.astype('uint8'), cv.COLOR_HSV2BGR)
+
+
+def detect_cloud(img: np.ndarray) -> Tuple[np.ndarray, float]:
+    """Detect clouds in an image"""
+
+    # scale the saturation by `Config.cloud_saturation_scale`
+    img = scale_saturation(img, Config.cloud_saturation_scale)
+
+    # mask the image in the range defined by `Config.cloud_lower` and `Config.cloud_upper`
+    lower_white = np.array(Config.cloud_lower, dtype=np.uint8)
+    upper_white = np.array(Config.cloud_upper, dtype=np.uint8)
+    mask = cv.inRange(img, lower_white, upper_white)
+
+    return mask, white_percentage(mask)
 
 
 def is_island_ghost(img: np.ndarray, cont: np.ndarray) -> bool:
     """Check if a contour represent a ghost island"""
+
     x, y, w, h = cv.boundingRect(cont)
     n = img[y:y+h, x:x+w]
     n = cv.cvtColor(n, cv.COLOR_BGR2GRAY)
@@ -523,6 +508,8 @@ def main():
             logger.info('Not daytime, closing')
             return
 
+        _, clouds = detect_cloud(image)
+
         coasts, to_ignore = find_coasts(gray_image, image)
         json_dump(
             camera.image_id,
@@ -535,8 +522,7 @@ def main():
 
         image_path = camera.build_image_path()
         cv.imwrite(image_path, image)
-        log_data(camera.image_id, image_path,
-                 cloud_percent(image), *iss_data)
+        log_data(camera.image_id, image_path, clouds, *iss_data)
 
 
 # /MAIN
