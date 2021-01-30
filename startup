@@ -9,6 +9,7 @@ and move them to dedicated folder
 
 from pathlib import Path
 from datetime import datetime
+from main import runtime_scheduler, main
 import json
 
 
@@ -28,6 +29,8 @@ runtime_suffixes = [
     '.json'
 ]
 
+date_format = '%d.%m.%Y-%H:%M:%S'
+
 files = list(filter(
     lambda file: file.is_file() and file.suffix in runtime_suffixes,
     here.iterdir()
@@ -40,7 +43,7 @@ if len(files) > 0:
         files
     )))
 
-    runtime_folder = oldest_modification.strftime('%d.%m.%Y-%H:%M:%S')
+    runtime_folder = oldest_modification.strftime(date_format)
     runtime_path = here / runtime_folder
     funtime_files_path = runtime_path / 'runtime'
 
@@ -61,8 +64,10 @@ if len(files) > 0:
                 'formatted': size_format(total_size)
             },
             'date': {
-                'backup': datetime.now().strftime('%d.%m.%Y-%H:%M:%S'),
-                'oldest_modification': oldest_modification.strftime('%d.%m.%Y-%H:%M:%S')
+                'backup': datetime.now().strftime(date_format),
+                'oldest_modification': oldest_modification.strftime(date_format)
             },
             'files': list(map(lambda f: str(f.name), files))
         }, indent=4))
+
+runtime_scheduler(main)

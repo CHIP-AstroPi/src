@@ -159,7 +159,8 @@ class Camera:
             self._dummy_images = sorted(dummy_images)
 
             # check if there is no images, and throws if it's the case
-            assert len(self._dummy_images) > 0, Exception('No images found')
+            if not len(self._dummy_images) > 0:
+                raise ValueError('No images found')
 
     def capture(self) -> np.ndarray:
         """Capture raw frames from camera or disk"""
@@ -642,8 +643,9 @@ def main():
 # ----------------------------------------
 # RUNTIME ENTRY POINT
 
+# TODO uncomment in production
 # run the main function thorugh the `runtime_scheduler` function
-runtime_scheduler(main)
+# runtime_scheduler(main)
 
 # /RUNTIME ENTRY POINT
 # ----------------------------------------
