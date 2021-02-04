@@ -80,6 +80,7 @@ class Config():
     log_file_level = logging.INFO
 
     # iss position
+    #TODO vanno esterni come negli esempi su internet. per jom da parte del prof!
     iss_name = 'ISS (ZARYA)'
     iss_l1 = '1 25544U 98067A   21026.29455175  .00001781  00000-0  40614-4 0  9995'
     iss_l2 = '2 25544  51.6464 324.5349 0002308 292.1434 166.6739 15.48892138266603'
@@ -131,6 +132,7 @@ class Camera:
         self.image_id = image_first_id
 
         # checks if the picamera module is loaded
+        
         self._is_picam_loaded = is_picam_loaded
 
         # if the picamera module is loaded, init it's camera
@@ -167,7 +169,7 @@ class Camera:
 
         # if the picamera module is loaded
         if self._is_picam_loaded:
-            self._picam.capture(self._picam_raw, format=Config.cam_format)
+            self._picam.capture(self._picam_raw, format=Config.cam_format)#TODO fare un try in caso la camera non funzioni.
             return self._picam_raw.array
 
         # otherwise loads image from disk
@@ -498,6 +500,11 @@ def fractal_dimension(img: np.ndarray, contours: List[np.ndarray]) -> float:
     Given an image of a coastline and a list of contours,
     this function comput the fractal value of the coastline
     using a boxcounting algorithm.
+
+    -TODO bisogna usare l'immagine in scala di grigi
+    -TODO passare solo la shape dell'immagine
+    -
+
     """
 
     w, h = img.shape[:2]  # get width and height from the image
@@ -617,10 +624,10 @@ def main():
             logger.info('Not daytime, closing')
             return
 
-        _, clouds = detect_cloud(image)
+        _, clouds = detect_cloud(image)#TODO passare immagine a colori(già giusto)
 
-        coasts, to_ignore = find_coasts(gray_image, image)
-        fractal_ratio = fractal_dimension(image, coasts)
+        coasts, to_ignore = find_coasts(gray_image, image) #TODO togliere image(L'immagine a colori, lavorare solo con i grigi)
+        fractal_ratio = fractal_dimension(image, coasts) #TODO passare shape dell'immagine
 
         json_dump(
             camera.image_id,
@@ -633,7 +640,7 @@ def main():
         )
 
         image_path = camera.build_image_path()
-        cv.imwrite(image_path, image)
+        cv.imwrite(image_path, image)#TODO ok salvare a colori
         log_data(camera.image_id, image_path, clouds, fractal_ratio, *iss_data)
 
 # /MAIN
