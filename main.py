@@ -45,6 +45,17 @@ except ImportError:
 
 
 # ----------------------------------------
+# ISS TLE data
+
+name = "ISS (ZARYA)"
+line1 = "1 25544U 98067A   21026.29455175  .00001781  00000-0  40614-4 0  9995"
+line2 = "2 25544  51.6464 324.5349 0002308 292.1434 166.6739 15.48892138266603"
+
+# /ISS TLE data
+# ----------------------------------------
+
+
+# ----------------------------------------
 # CONFIG
 
 class Config():
@@ -55,8 +66,8 @@ class Config():
 
     # runtime schedule
     # see the `runtime_schedule` function for more info
-    rs_step = 0.1 * 60  # [seconds]
-    rs_tot = 0.5 * 60  # [seconds]
+    rs_step = 1 * 60  # [seconds]
+    rs_tot = 10 * 60  # [seconds]
 
     # fs
     fs_here = Path(__file__).parent.resolve()
@@ -80,10 +91,9 @@ class Config():
     log_file_level = logging.INFO
 
     # iss position
-    #TODO vanno esterni come negli esempi su internet. per jom da parte del prof!
-    iss_name = 'ISS (ZARYA)'
-    iss_l1 = '1 25544U 98067A   21026.29455175  .00001781  00000-0  40614-4 0  9995'
-    iss_l2 = '2 25544  51.6464 324.5349 0002308 292.1434 166.6739 15.48892138266603'
+    iss_name = name
+    iss_l1 = line1
+    iss_l2 = line2
 
     # cut image
     cut_image_height = 65
@@ -132,7 +142,6 @@ class Camera:
         self.image_id = image_first_id
 
         # checks if the picamera module is loaded
-        
         self._is_picam_loaded = is_picam_loaded
 
         # if the picamera module is loaded, init it's camera
@@ -169,7 +178,7 @@ class Camera:
 
         # if the picamera module is loaded
         if self._is_picam_loaded:
-            self._picam.capture(self._picam_raw, format=Config.cam_format)#TODO fare un try in caso la camera non funzioni.
+            self._picam.capture(self._picam_raw, format=Config.cam_format)
             return self._picam_raw.array
 
         # otherwise loads image from disk
@@ -192,9 +201,15 @@ class Camera:
         if self._is_picam_loaded:
             self._picam_raw.truncate(0)
 
-    def __enter__(self) -> np.ndarray:
+    def __enter__(self) -> Union[np.ndarray, bool]:
         """Syntactic sugar for `Camera.capture`"""
-        return self.capture()
+
+        try:
+            # return a capture
+            return self.capture()
+        except _:
+            # if the capture fails, return False
+            return False
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Syntactic sugar for `Camera.camera_update`"""
@@ -454,6 +469,7 @@ def is_island_ghost(img: np.ndarray, cont: np.ndarray, max_white_percentage=Conf
     return white_percentage(n) >= max_white_percentage
 
 
+# TODO remove colored image
 def find_coasts(img_gray: np.ndarray, img_color: np.ndarray) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Finds coastlines"""
 
@@ -494,7 +510,7 @@ def find_coasts(img_gray: np.ndarray, img_color: np.ndarray) -> Tuple[List[np.nd
     return contours, contours_to_ignore
 
 
-def fractal_dimension(img: np.ndarray, contours: List[np.ndarray]) -> float:
+def fractal_dimension(contours: List[np.ndarray], shape: Tuple[int]) -> float:
     """Compute fractal dimension of coastlines
 
     Given an image of a coastline and a list of contours,
@@ -507,7 +523,7 @@ def fractal_dimension(img: np.ndarray, contours: List[np.ndarray]) -> float:
 
     """
 
-    w, h = img.shape[:2]  # get width and height from the image
+    w, h = shape[:2]  # get width and height from the image
     # create a black background image with same dimensions
     img = np.zeros((w, h, 1), np.uint8)
 
@@ -612,6 +628,11 @@ def runtime_scheduler(task: callable) -> None:
 def main():
     with camera as raw_image:
 
+        # check if the capture is successfull
+        if raw_image is False:
+            logger.error('Camera error')
+            return
+
         # get iss data
         iss_data = get_iss_data()
 
@@ -624,10 +645,10 @@ def main():
             logger.info('Not daytime, closing')
             return
 
-        _, clouds = detect_cloud(image)#TODO passare immagine a colori(già giusto)
+        _, clouds = detect_cloud(image)
 
-        coasts, to_ignore = find_coasts(gray_image, image) #TODO togliere image(L'immagine a colori, lavorare solo con i grigi)
-        fractal_ratio = fractal_dimension(image, coasts) #TODO passare shape dell'immagine
+        coasts, to_ignore = find_coasts(gray_image, image)
+        fractal_ratio = fractal_dimension(coasts, image.shape)
 
         json_dump(
             camera.image_id,
@@ -640,7 +661,7 @@ def main():
         )
 
         image_path = camera.build_image_path()
-        cv.imwrite(image_path, image)#TODO ok salvare a colori
+        cv.imwrite(image_path, image)
         log_data(camera.image_id, image_path, clouds, fractal_ratio, *iss_data)
 
 # /MAIN
