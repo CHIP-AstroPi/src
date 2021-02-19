@@ -67,7 +67,7 @@ class Config():
     # runtime schedule
     # see the `runtime_schedule` function for more info
     rs_step = 1 * 60  # [seconds]
-    rs_tot = 10 * 60  # [seconds]
+    rs_tot = 175 * 60  # [seconds]
 
     # fs
     fs_here = Path(__file__).parent.resolve()
@@ -87,7 +87,7 @@ class Config():
     log_format_date = '%Y-%m-%d %H:%M:%S'
     log_data_format = '%(asctime)s, %(message)s'
     log_log_format = '(%(asctime)s.%(msecs)03d)  [%(levelname)s] %(message)s'
-    log_stderr_level = logging.DEBUG  # TODO in production, switch to `logging.INFO`
+    log_stderr_level = logging.INFO
     log_file_level = logging.INFO
 
     # iss position
@@ -517,10 +517,6 @@ def fractal_dimension(contours: List[np.ndarray], shape: Tuple[int]) -> float:
     this function comput the fractal value of the coastline
     using a boxcounting algorithm.
 
-    -TODO bisogna usare l'immagine in scala di grigi
-    -TODO passare solo la shape dell'immagine
-    -
-
     """
 
     w, h = shape[:2]  # get width and height from the image
@@ -671,9 +667,8 @@ def main():
 # ----------------------------------------
 # RUNTIME ENTRY POINT
 
-# TODO uncomment in production
 # run the main function thorugh the `runtime_scheduler` function
-# runtime_scheduler(main)
+runtime_scheduler(main)
 
 # /RUNTIME ENTRY POINT
 # ----------------------------------------
