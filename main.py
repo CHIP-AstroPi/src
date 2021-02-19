@@ -2,7 +2,7 @@
 CHIP: CHIP Human Impact Prevision
 
 Useful links:
-- GitHub: https://github.com/CHIP-AstroPi
+- GitHub: https://github.com/CHIP-AstroPi/src
 
 By the CHIP Team:
 - Agbonson Fabrizio
@@ -11,8 +11,19 @@ By the CHIP Team:
 - Jomini Pietro
 - Nardi Simone
 
-TODO project description
-TODO check english (!)
+This project aims to compare modern and old data and, by analyzing them, try to predict near-future conditions.
+In particular, we analyze the way coastlines changes over time and, from this, extrapolate information about the environment.
+
+This script, in particular, performs the data collection tasks required.
+It runs for a little less than 3 hours and repeatedly collects images from the live NoIr camera, with the blue filter,
+and collect data about the position of the ISS at the moment of the capture.
+It than analyze the image applying the following algorithms:
+- it checks if the image is captured at daytime, and stops if it's not
+- it checks the clouds coverage in the image
+- it detects coastlines
+- it detects the fractal dimension of the detected coastlines
+
+Finally, it dumps the collected data into a log file and passes to the next image.
 """
 
 
@@ -30,7 +41,7 @@ import time
 import math
 import json
 
-# for test purpose, we don't always works directly on the respberry.
+# while developing we don't always works directly on the respberry.
 # hence, we try to import the PiCamera module, and if it fails to
 # we simulate a dummy camera that uses images on disk as frames
 try:
@@ -66,7 +77,7 @@ class Config():
 
     # runtime schedule
     # see the `runtime_schedule` function for more info
-    rs_step = 1 * 60  # [seconds]
+    rs_step = 20  # [seconds]
     rs_tot = 175 * 60  # [seconds]
 
     # fs
@@ -469,7 +480,6 @@ def is_island_ghost(img: np.ndarray, cont: np.ndarray, max_white_percentage=Conf
     return white_percentage(n) >= max_white_percentage
 
 
-# TODO remove colored image
 def find_coasts(img_gray: np.ndarray, img_color: np.ndarray) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Finds coastlines"""
 
@@ -566,14 +576,14 @@ def fractal_dimension(contours: List[np.ndarray], shape: Tuple[int]) -> float:
 # MAIN
 
 def runtime_scheduler(task: callable) -> None:
-    """Handle runtime task scheduling. Can be used as an autorunning decorator.
+    """Handle runtime task scheduling.
 
     Given the total runtime `Config.rs_tot` and the minimum step length `Config.rs_step`,
     it will try to fit the `task` in each step.
 
     If the `task` execution takes less than `Config.rs_step` it will wait until the step is complete.
 
-    If the `task` execution exceeds `Config.rs_step` it will merge the current and the next step.
+    If the `task` execution exceeds `Config.rs_step` it will merge the current and the next step waiting time.
     """
 
     logger.info('RS:start')
@@ -641,11 +651,16 @@ def main():
             logger.info('Not daytime, closing')
             return
 
+        # detect clouds
         _, clouds = detect_cloud(image)
 
+        # detect coastlines
         coasts, to_ignore = find_coasts(gray_image, image)
+        
+        # compute the fractal dimension of the detected coastlines
         fractal_ratio = fractal_dimension(coasts, image.shape)
 
+        # dumps data to json
         json_dump(
             camera.image_id,
             'coasts',
